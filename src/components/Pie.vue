@@ -8,6 +8,9 @@
 import {onMounted, ref} from 'vue'
 import Chart from 'chart.js';
 
+let theChart
+let theChartDataset
+
 export default {
   name: 'Pie',
 
@@ -22,31 +25,50 @@ export default {
     },
   },
 
-  setup(props, context){
-    // Vue3 ref mechanism
-    const canvas = ref(null)
+  data() {
+    return {
+      isAwake : false,
+      pieBackgrounds : [
+        'rgba(255, 99, 132, 0.2)',
+        'rgba(54, 162, 235, 0.2)',
+      ],
+      pieBorders : [
+        'rgba(255, 99, 132, 1)',
+        'rgba(54, 162, 235, 1)',
+      ]
+    }
+  },
 
-    onMounted(() => {
+  methods : {
+    wakeUp : function(){
+      theChart.data.labels = this.pieLabels
+      theChartDataset.backgroundColor = this.pieBackgrounds
+      theChartDataset.borderColor = this.pieBorders
+    }
+  },
 
-      let theChart = new Chart(canvas.value, {
-        type: 'pie',
+  watch : {
+    pieData(){
+      console.log('CHANGE', this.pieData);
+      !this.isAwake && this.wakeUp()
+      theChart.data.datasets[0].data = this.pieData
+      theChart.update()
+    }
+  },
+
+  mounted() {
+    theChart = new Chart(this.$refs.canvas, {
+        type: 'doughnut',
         responsive: true,
+        cutoutPercentage : 10,
         data: {
-            labels: props.pieLabels,
-            datasets: [{
-                label: 'Something',
-                data: props.pieData,
-                // weight : 1,
-                backgroundColor: [
-                    'rgba(255, 99, 132, 0.2)',
-                    'rgba(54, 162, 235, 0.2)',
-                ],
-                borderColor: [
-                    'rgba(255, 99, 132, 1)',
-                    'rgba(54, 162, 235, 1)',
-                ],
-                borderWidth: 1
-            }]
+          labels: [],
+          datasets: [{
+            data: [1,0],
+            backgroundColor: '#ccc',
+            borderColor: '#555',
+            // borderWidth: 1
+          }]
         },
         // options: {
         //   title: {
@@ -56,11 +78,7 @@ export default {
         // }
       })
 
-    })
-
-    return {
-      canvas
-    }
+    theChartDataset = theChart.data.datasets[0]
   }
 }
 </script>

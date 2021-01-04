@@ -1,5 +1,6 @@
 <template>
   <div class="publisher">
+    <button class="playpause" @click="playPause">{{ playPauseSymbol }}</button>
     <h2>Today's Articles ({{graunArticles.length}})</h2>
     <div class="total">
       <div class="pie-tin">
@@ -10,16 +11,17 @@
       </div>
       <caption>Based on {{statsOverall.foundTally}}/{{graunArticles.length}} contributors</caption>
     </div>
-    <div v-for="(pillar, index) in statsByPillar" :key="index" class="pillar">
+    <!-- <div v-for="(pillar, index) in statsByPillar" :key="index" class="pillar">
       <h3>{{pillar.pillarName}}</h3>
       <div class="pie-tin">
-        <Pie
-        :pie-data="[pillar.stats.oxTally, pillar.stats.plebTally]"
 
+        <Pie
+          :pie-data="[pillar.stats.oxTally, pillar.stats.plebTally]"
+          :pie-labels="totalPieLabels"
         />
       </div>
       <caption>Based on {{statsOverall.foundTally}}/{{graunArticles.length}} contributors</caption>
-    </div>
+    </div> -->
     <!-- <div>Oxbridge {{statsOverall.oxTally}}</div>
     <div>Pleb {{statsOverall.plebTally}}</div>
     <div>Pass {{statsOverall.unknownTally}}</div> -->
@@ -45,10 +47,17 @@ export default {
     Pie
   },
   mounted(){
-    this.$store.dispatch('graun/loadArticles')
+    // this.$store.dispatch('graun/loadArticles')
   },
 
   computed : {
+    playPauseSymbol() {
+      if(this.complete) {
+        return '⟳'
+      }
+
+      return this.proceed ? '⏸' : '▶'
+    },
     statsOverall(){
       return this.$store.getters['graun/statsOverall']
     },
@@ -66,6 +75,21 @@ export default {
     },
     graunArticles(){
       return this.$store.getters['graun/articles']
+    },
+    proceed(){
+      return this.$store.state.graun.proceed
+    },
+    complete(){
+      return this.$store.state.graun.complete
+    }
+  },
+  methods : {
+    playPause() {
+      if(this.complete) {
+        this.$store.dispatch('graun/restart')
+      } else {
+        this.$store.dispatch(this.proceed ? 'graun/halt' : 'graun/proceed')
+      }
     }
   }
 }
@@ -75,6 +99,11 @@ export default {
 .publisher {
   max-width: 1000px;
   margin: auto;
+}
+
+button.playpause {
+  min-height: 2rem;
+  min-width: 2rem;
 }
 
 .total {

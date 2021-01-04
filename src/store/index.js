@@ -5,19 +5,47 @@ import staticArticles from '../../data/articles.test.json'
 import ky from 'ky';
 
 const apiKey = '9db526cb-6cfe-45a3-b45f-c89483d43628'
-const apiInterval = 2000
+const apiInterval = 1000
 const apiUrl =new URL('https://content.guardianapis.com/search')
+
 apiUrl.searchParams.set('api-key',apiKey)
+apiUrl.searchParams.append("from-date", "2020-12-20")
+apiUrl.searchParams.append("to-date", "2020-12-26")
+apiUrl.searchParams.append("show-tags", "contributor")
+apiUrl.searchParams.append("page-size", "10")
+apiUrl.searchParams.append("section", "commentisfree") //TEMP
 
 let gotPages = 0
+let timer = null
 let maxPage = null
-let forceMaxPage = 3
+const forceMaxPage = 3
 
-const getNextPageOfArticles = async () => {
+const getNextPageOfArticles = async (context) => {
+
+  // Update the API URL and make the call
   apiUrl.searchParams.set("page", gotPages + 1)
   const parsed = await ky.get(apiUrl).json()
+  const pageOfArticles = parsed.response.results
+
+  // Update `maxPage` according to the response, and `gotPages`
   maxPage = forceMaxPage || parsed.response.pages
-  return parsed.response.results
+  gotPages++
+
+  if(Number.isInteger(forceMaxPage)){
+    maxPage = Math.min(forceMaxPage, parsed.response.pages)
+  } else {
+    maxPage = parsed.response.pages
+  }
+
+  if (gotPages === maxPage && timer) {
+    clearInterval(timer)
+    context.commit('proceed', false)
+    context.commit('complete', true)
+  }
+
+  // Add author info to the article data and wang it in the state
+  addAuthorToArticles(pageOfArticles)
+  context.commit('appendArticles', pageOfArticles)
 }
 
 const addAuthorToArticles = articles => {
@@ -27,30 +55,30 @@ const addAuthorToArticles = articles => {
 const getAuthorByArticle = article => {
   const verbose = false
   if(Array.isArray(article.tags) === false) {
-    verbose && console.log('no tags')
+    verbose && console.info('no tags')
     return null
   }
 
   const contributorTag = article.tags.find(tag => tag.type === 'contributor')
 
   if (!contributorTag) {
-    verbose && console.log('no contributor', article)
+    verbose && console.info('no contributor', article)
     return null
   }
 
   if(!contributorTag.webTitle) {
-    verbose && console.log('no webTitle')
+    verbose && console.info('no webTitle')
     return null
   }
 
   const author = staticGraunPersonnel.find(person => person.name === contributorTag.webTitle)
 
   if(!author) {
-    verbose && console.log(contributorTag.webTitle,'no matching author')
+    verbose && console.info(contributorTag.webTitle,'no matching author')
     return null
   }
 
-  console.log(author.name, '✓')
+  console.info(author.name, '✓')
 
   return author
 }
@@ -87,7 +115,9 @@ export default createStore({
       namespaced : true,
       state: {
         articles: [],
-        personnel: staticGraunPersonnel
+        personnel: staticGraunPersonnel,
+        proceed: false,
+        complete: false,
       },
       getters: {
         articles(state){
@@ -133,48 +163,41 @@ export default createStore({
         },
       },
       actions: {
-        async loadArticles () {
-          apiUrl.searchParams.append("from-date", "2020-12-13")
-          apiUrl.searchParams.append("to-date", "2020-12-13")
-          apiUrl.searchParams.append("show-tags", "contributor")
-          apiUrl.searchParams.append("page-size", "10")
-          apiUrl.searchParams.append("section", "commentisfree") //TEMP
+        async proceed(context) {
+          context.commit('proceed', true)
 
-          var timer = setInterval(async () => {
+          // Do this immediately
+          await getNextPageOfArticles(context)
 
-            let pageOfArticles = await getNextPageOfArticles()
-            gotPages++
-            addAuthorToArticles(pageOfArticles)
-            this.commit('graun/appendArticles', pageOfArticles)
-
-            if (gotPages === maxPage) {
-              console.log('interval finito ', timer);
-              clearInterval(timer)
-            }
-
-          }, apiInterval);
-
-
-          // const parsed = await ky.get(apiUrl).json()
-          // const articles = parsed.response.results
-          // addAuthorToArticles(articles)
-
-          // const totalPages = parsed.response.pages
-
-          // this.commit('graun/appendArticles', parsed.response.results)
-
-            // setTimeout(() => {
-            //   this.commit('graun/articles', staticArticles.response.results)
-            // }, 1000)
-
-
+          // And then do it repeatedly
+          if(gotPages < maxPage) {
+            timer = setInterval(() => getNextPageOfArticles(context), apiInterval)
+          }
+        },
+        halt(context) {
+          clearInterval(timer)
+          context.commit('proceed', false)
+        },
+        restart(context) {
+          gotPages = 0
+          timer = null
+          maxPage = null
+          context.commit('expungeArticles', false)
+          context.dispatch('proceed')
         }
       },
       mutations: {
         appendArticles (state, articles) {
           state.articles.push(...articles)
-          console.log('DONE', state.articles.length);
-
+        },
+        expungeArticles (state) {
+          state.articles = []
+        },
+        proceed(state, newProceed) {
+          state.proceed = newProceed
+        },
+        complete(state, newcomplete) {
+          state.complete = newcomplete
         }
       }
     }
