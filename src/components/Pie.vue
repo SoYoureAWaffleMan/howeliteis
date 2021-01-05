@@ -5,16 +5,18 @@
 </template>
 
 <script>
-import {onMounted, ref} from 'vue'
 import Chart from 'chart.js';
 
 let theChart
-let theChartDataset
+let theDataset
 
 export default {
   name: 'Pie',
 
   props : {
+    pieTitle : {
+      default : ''
+    },
     pieData : {
       required : true,
       type : Array
@@ -29,30 +31,17 @@ export default {
     return {
       isAwake : false,
       pieBackgrounds : [
-        'rgba(255, 99, 132, 0.2)',
         'rgba(54, 162, 235, 0.2)',
+        'rgba(255, 99, 132, 0.2)',
+        'rgba(150, 20, 200, 0.2)',
+        'rgba(180, 180, 180, 0.2)',
       ],
       pieBorders : [
-        'rgba(255, 99, 132, 1)',
         'rgba(54, 162, 235, 1)',
+        'rgba(255, 99, 132, 1)',
+        'rgba(150, 20, 200, 1)',
+        'rgba(180, 180, 180, 1)',
       ]
-    }
-  },
-
-  methods : {
-    wakeUp : function(){
-      theChart.data.labels = this.pieLabels
-      theChartDataset.backgroundColor = this.pieBackgrounds
-      theChartDataset.borderColor = this.pieBorders
-    }
-  },
-
-  watch : {
-    pieData(){
-      console.log('CHANGE', this.pieData);
-      !this.isAwake && this.wakeUp()
-      theChart.data.datasets[0].data = this.pieData
-      theChart.update()
     }
   },
 
@@ -70,15 +59,44 @@ export default {
             // borderWidth: 1
           }]
         },
-        // options: {
-        //   title: {
-        //     display: true,
-        //     text: 'Predicted world population (millions) in 2050'
-        //   }
-        // }
+
+        options: {
+          animation: {
+              duration: 0
+          },
+          title: {
+            // display: true,
+            // text: 'Predicted world population (millions) in 2050'
+          }
+        }
       })
 
-    theChartDataset = theChart.data.datasets[0]
-  }
+    theDataset = theChart.data.datasets[0]
+    window.theChart = theDataset
+  },
+
+  methods : {
+    wakeUp : function() {
+      theChart.data.labels = this.pieLabels
+      theChart.options.animation.duration = 1001
+      theDataset.backgroundColor = this.pieBackgrounds
+      theDataset.borderColor = this.pieBorders
+    }
+  },
+
+  watch : {
+    pieData() {
+      !this.isAwake && this.wakeUp()
+      theChart.data.datasets[0].data = this.pieData
+      theChart.update()
+    },
+    pieTitle() {
+      !this.isAwake && this.wakeUp()
+      theChart.options.title.display = true;
+      theChart.options.title.text = 'Based on stuff';
+      theChart.update()
+    }
+  },
+
 }
 </script>

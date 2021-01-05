@@ -1,16 +1,15 @@
-import { createStore } from 'vuex'
+import { createStore, createLogger } from 'vuex'
 import staticGraunPersonnel from '../../data/the-guardian-personnel.json'
-import staticArticles from '../../data/articles.test.json'
-
 import ky from 'ky';
+import staticArticles from '../../data/articles.test.json'
 
 const apiKey = '9db526cb-6cfe-45a3-b45f-c89483d43628'
 const apiInterval = 1000
 const apiUrl =new URL('https://content.guardianapis.com/search')
 
 apiUrl.searchParams.set('api-key',apiKey)
-apiUrl.searchParams.append("from-date", "2020-12-20")
-apiUrl.searchParams.append("to-date", "2020-12-26")
+apiUrl.searchParams.append("from-date", "2020-12-01")
+apiUrl.searchParams.append("to-date", "2020-12-07")
 apiUrl.searchParams.append("show-tags", "contributor")
 apiUrl.searchParams.append("page-size", "10")
 apiUrl.searchParams.append("section", "commentisfree") //TEMP
@@ -18,10 +17,9 @@ apiUrl.searchParams.append("section", "commentisfree") //TEMP
 let gotPages = 0
 let timer = null
 let maxPage = null
-const forceMaxPage = 3
+const forceMaxPage = null
 
 const getNextPageOfArticles = async (context) => {
-
   // Update the API URL and make the call
   apiUrl.searchParams.set("page", gotPages + 1)
   const parsed = await ky.get(apiUrl).json()
@@ -85,24 +83,25 @@ const getAuthorByArticle = article => {
 
 const getStatsForArticles = articles => {
   const stats = {
-    foundTally:0,
-    oxTally: 0,
-    plebTally: 0,
-    unknownTally:0,
-    total: articles.length,
+    'Oxbridge': 0,
+    'Other UK': 0,
+    'International': 0,
+    'Unknown': 0,
   }
 
   articles.forEach( article => {
-    if(article.author){
-      stats.foundTally++
+
+    if(!article.author) {
+      stats.Unknown++
+      return
     }
 
-    if (!article.author || article.author.oxbridge === null) {
-      stats.unknownTally++
-    } else if(article.author.oxbridge){
-      stats.oxTally++
+    if (article.author.oxbridge) {
+      stats.Oxbridge++
+    } else if(article.author['non-brit']){
+      stats.International++
     } else {
-      stats.plebTally++
+      stats['Other UK']++
     }
   })
 
@@ -120,12 +119,12 @@ export default createStore({
         complete: false,
       },
       getters: {
-        articles(state){
-          return state.articles
-        },
-
-        statsOverall(state, getters){
-          return getStatsForArticles(getters.articles)
+        /**
+         * Gets "stats" object comprised of `data` (array) & `labels` (array)
+         * @param {Vuex state} state
+         */
+        statsOverall(state){
+          return getStatsForArticles(state.articles)
         },
 
         statsByPillar: (state) => {
@@ -199,7 +198,10 @@ export default createStore({
         complete(state, newcomplete) {
           state.complete = newcomplete
         }
-      }
+      },
+      plugins: process.env.NODE_ENV === 'development'
+        ? [createLogger()]
+        : []
     }
   }
 })

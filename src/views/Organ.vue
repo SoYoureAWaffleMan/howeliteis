@@ -26,10 +26,10 @@
     <div>Pleb {{statsOverall.plebTally}}</div>
     <div>Pass {{statsOverall.unknownTally}}</div> -->
 
-    <!-- <p v-for="(article, index) in graunArticles" :key="index">
+    <p v-for="(article, index) in graunArticles" :key="index">
       {{article.sectionName}} - {{ article.tags.length ? article.tags[0].webTitle : 'No tags'}}
-      <a :href=article.webUrl>{{article.webTitle.substring(0,25)}}</a>
-    </p> -->
+      <a :href=article.webUrl>{{article.webTitle.substring(0,25)}}</a> {{article.author ? article.author.name : 'unknown'}}
+    </p>
 
     <!-- <h2>Personnel ({{graunPersonnel.length}})</h2>
     <p v-for="(person, index) in graunPersonnel" :key="index">
@@ -65,16 +65,16 @@ export default {
       return this.$store.getters['graun/statsByPillar']
     },
     totalPieData(){
-      return [this.statsOverall.oxTally, this.statsOverall.plebTally]
+      return Object.values(this.statsOverall)
     },
     totalPieLabels(){
-      return ['Oxbridge', 'Others']
+      return Object.keys(this.statsOverall)
     },
     graunPersonnel(){
       return this.$store.state.graun.personnel
     },
     graunArticles(){
-      return this.$store.getters['graun/articles']
+      return this.$store.state.graun.articles
     },
     proceed(){
       return this.$store.state.graun.proceed
