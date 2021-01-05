@@ -9,7 +9,6 @@
         :pie-labels="totalPieLabels"
         />
       </div>
-      <caption>Based on {{statsOverall.foundTally}}/{{graunArticles.length}} contributors</caption>
     </div>
     <!-- <div v-for="(pillar, index) in statsByPillar" :key="index" class="pillar">
       <h3>{{pillar.pillarName}}</h3>
@@ -28,7 +27,8 @@
 
     <p v-for="(article, index) in graunArticles" :key="index">
       {{article.sectionName}} - {{ article.tags.length ? article.tags[0].webTitle : 'No tags'}}
-      <a :href=article.webUrl>{{article.webTitle.substring(0,25)}}</a> {{article.author ? article.author.name : 'unknown'}}
+      <a :href=article.webUrl>{{article.webTitle.substring(0,25)}}</a>&nbsp;
+      <span v-if="article.author" class="author" :class="getAuthorClass(article.author)">{{article.author.name}}</span>
     </p>
 
     <!-- <h2>Personnel ({{graunPersonnel.length}})</h2>
@@ -47,6 +47,7 @@ export default {
     Pie
   },
   mounted(){
+
     // this.$store.dispatch('graun/loadArticles')
   },
 
@@ -90,6 +91,17 @@ export default {
       } else {
         this.$store.dispatch(this.proceed ? 'graun/halt' : 'graun/proceed')
       }
+    },
+    getAuthorClass(author){
+      if(author['non-brit']) {
+        return 'international'
+      }
+
+      if(author['oxbridge']) {
+        return 'oxbridge'
+      }
+
+      return 'other'
     }
   }
 }
@@ -126,6 +138,22 @@ button.playpause {
     height: 160px;
     width: 200px;
   }
+}
+
+.author {
+  &.international {
+    background: purple;
+  }
+
+  &.oxbridge {
+    background: pink;
+  }
+
+  &.other {
+    background: powderblue;
+  }
+
+
 }
 
 </style>

@@ -8,11 +8,11 @@ const apiInterval = 1000
 const apiUrl =new URL('https://content.guardianapis.com/search')
 
 apiUrl.searchParams.set('api-key',apiKey)
-apiUrl.searchParams.append("from-date", "2020-12-01")
-apiUrl.searchParams.append("to-date", "2020-12-07")
+apiUrl.searchParams.append("from-date", "2020-12-05")
+apiUrl.searchParams.append("to-date", "2020-12-05")
 apiUrl.searchParams.append("show-tags", "contributor")
-apiUrl.searchParams.append("page-size", "10")
-apiUrl.searchParams.append("section", "commentisfree") //TEMP
+apiUrl.searchParams.append("page-size", "20")
+// apiUrl.searchParams.append("section", "commentisfree") //TEMP
 
 let gotPages = 0
 let timer = null
