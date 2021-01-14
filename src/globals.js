@@ -11,5 +11,4 @@ export default {
     'International': 'rgba(150, 20, 200)',
     'Unknown': 'rgba(180, 180, 180)',
   },
-
 }

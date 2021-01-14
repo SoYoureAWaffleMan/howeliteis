@@ -2,6 +2,9 @@
   <div class="publisher">
     <button class="playpause" @click="playPause">{{ playPauseSymbol }}</button>
     <h2>Today's Articles ({{graunArticles.length}})</h2>
+    <div>
+      {{statsOverall}}
+    </div>
     <div class="total">
       <div class="pie-tin">
         <Pie
@@ -75,7 +78,7 @@ export default {
       return this.$store.state.graun.personnel
     },
     graunArticles(){
-      return this.$store.state.graun.articles
+      return this.$store.getters['graun/theDaysArticles']
     },
     proceed(){
       return this.$store.state.graun.proceed

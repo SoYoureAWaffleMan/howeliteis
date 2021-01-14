@@ -6,10 +6,11 @@ import staticArticles from '../../data/articles.test.json'
 const apiKey = '9db526cb-6cfe-45a3-b45f-c89483d43628'
 const apiInterval = 1000
 const apiUrl =new URL('https://content.guardianapis.com/search')
+const dateString = '2020-01-14'
 
 apiUrl.searchParams.set('api-key',apiKey)
-apiUrl.searchParams.append("from-date", "2020-12-05")
-apiUrl.searchParams.append("to-date", "2020-12-05")
+apiUrl.searchParams.append("from-date", dateString)
+apiUrl.searchParams.append("to-date", dateString)
 apiUrl.searchParams.append("show-tags", "contributor")
 apiUrl.searchParams.append("page-size", "20")
 // apiUrl.searchParams.append("section", "commentisfree") //TEMP
@@ -25,6 +26,10 @@ const getNextPageOfArticles = async (context) => {
   const parsed = await ky.get(apiUrl).json()
   const pageOfArticles = parsed.response.results
 
+  // Add author info to the article data and wang it in the state
+  addAuthorToArticles(pageOfArticles)
+  context.commit('appendArticles', pageOfArticles)
+
   // Update `maxPage` according to the response, and `gotPages`
   maxPage = forceMaxPage || parsed.response.pages
   gotPages++
@@ -39,11 +44,11 @@ const getNextPageOfArticles = async (context) => {
     clearInterval(timer)
     context.commit('proceed', false)
     context.commit('complete', true)
-  }
+    console.log('DONE - persisting', context.getters['theDaysArticles']);
 
-  // Add author info to the article data and wang it in the state
-  addAuthorToArticles(pageOfArticles)
-  context.commit('appendArticles', pageOfArticles)
+
+    localStorage.setItem(dateString, JSON.stringify(context.getters['theDaysArticles']))
+  }
 }
 
 const addAuthorToArticles = articles => {
@@ -113,18 +118,21 @@ export default createStore({
     graun: {
       namespaced : true,
       state: {
-        articles: [],
+        articles: {}, // object keyed by date e.g. {'2020-02-14' : [...articles]}
         personnel: staticGraunPersonnel,
         proceed: false,
         complete: false,
       },
       getters: {
+        theDaysArticles(state){
+          return state.articles[dateString] || []
+        },
         /**
          * Gets "stats" object comprised of `data` (array) & `labels` (array)
          * @param {Vuex state} state
          */
-        statsOverall(state){
-          return getStatsForArticles(state.articles)
+        statsOverall(state, getters){
+          return getStatsForArticles(getters['theDaysArticles'])
         },
 
         statsByPillar: (state) => {
@@ -135,7 +143,7 @@ export default createStore({
           const pillarsStats = []
 
           // Group all articles by pillarId
-          state.articles.forEach(article => {
+          state.articles[dateString].forEach(article => {
             if(pillarsObj.hasOwnProperty(article.pillarId)) {
               pillarsObj[article.pillarId].push(article)
             } else {
@@ -163,9 +171,28 @@ export default createStore({
       },
       actions: {
         async proceed(context) {
+          // Any cached articles for this date?
+          const cachedArticlesString = localStorage.getItem(dateString)
+
+          if(cachedArticlesString) {
+            console.log('GOT string', cachedArticlesString);
+
+            try {
+              const cachedArticles = JSON.parse(cachedArticlesString)
+              Array.isArray(cachedArticles) && context.commit('setArticles', cachedArticles)
+              console.log('Found in cache, bailing...');
+              return
+            } catch(error) {
+              console.error('Bad JSON', error)
+            }
+          }
+
+          // No cache found
+          console.log('No cache');
           context.commit('proceed', true)
 
           // Do this immediately
+          context.commit('setArticles', [])
           await getNextPageOfArticles(context)
 
           // And then do it repeatedly
@@ -181,16 +208,20 @@ export default createStore({
           gotPages = 0
           timer = null
           maxPage = null
-          context.commit('expungeArticles', false)
+          context.commit('setArticles', [])
           context.dispatch('proceed')
         }
       },
       mutations: {
-        appendArticles (state, articles) {
-          state.articles.push(...articles)
+        setArticles (state, articles) {
+          if(Array.isArray(articles)){
+            state.articles[dateString] = articles
+          } else {
+            throw error('This isn\'t an array')
+          }
         },
-        expungeArticles (state) {
-          state.articles = []
+        appendArticles (state, articles) {
+          state.articles[dateString].push(...articles)
         },
         proceed(state, newProceed) {
           state.proceed = newProceed
