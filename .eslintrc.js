@@ -1,5 +1,6 @@
 
 module.exports = {
+  parser: "babel-eslint",
   extends: [
     // 'plugin:vue/vue3-recommended',
   ],
@@ -9,3 +10,5 @@ module.exports = {
     'no-prototype-builtins' : 'off',
   }
 }
+
+

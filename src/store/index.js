@@ -6,7 +6,7 @@ import staticArticles from '../../data/articles.test.json'
 const apiKey = '9db526cb-6cfe-45a3-b45f-c89483d43628'
 const apiInterval = 1000
 const apiUrl =new URL('https://content.guardianapis.com/search')
-const dateString = '2020-01-14'
+const dateString = new Date().toISOString().slice(0,10)
 
 apiUrl.searchParams.set('api-key',apiKey)
 apiUrl.searchParams.append("from-date", dateString)
@@ -44,8 +44,6 @@ const getNextPageOfArticles = async (context) => {
     clearInterval(timer)
     context.commit('proceed', false)
     context.commit('complete', true)
-    console.log('DONE - persisting', context.getters['theDaysArticles']);
-
 
     localStorage.setItem(dateString, JSON.stringify(context.getters['theDaysArticles']))
   }
@@ -91,11 +89,11 @@ const getStatsForArticles = articles => {
     'Oxbridge': 0,
     'Other UK': 0,
     'International': 0,
+    'Undisclosed': 0,
     'Unknown': 0,
   }
 
   articles.forEach( article => {
-
     if(!article.author) {
       stats.Unknown++
       return
@@ -105,8 +103,10 @@ const getStatsForArticles = articles => {
       stats.Oxbridge++
     } else if(article.author['non-brit']){
       stats.International++
-    } else {
+    } else if(article.author['uni-text']) {
       stats['Other UK']++
+    } else {
+      stats['Undisclosed']++
     }
   })
 
@@ -175,7 +175,6 @@ export default createStore({
           const cachedArticlesString = localStorage.getItem(dateString)
 
           if(cachedArticlesString) {
-            console.log('GOT string', cachedArticlesString);
 
             try {
               const cachedArticles = JSON.parse(cachedArticlesString)

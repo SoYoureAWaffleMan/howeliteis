@@ -34,13 +34,13 @@ export default {
         'rgba(54, 162, 235, 0.2)',
         'rgba(255, 99, 132, 0.2)',
         'rgba(150, 20, 200, 0.2)',
-        'rgba(180, 180, 180, 0.2)',
+        'rgba(180, 250, 180, 0.2)',
       ],
       pieBorders : [
         'rgba(54, 162, 235, 1)',
         'rgba(255, 99, 132, 1)',
         'rgba(150, 20, 200, 1)',
-        'rgba(180, 180, 180, 1)',
+        'rgba(180, 250, 180, 1)',
       ]
     }
   },
@@ -53,10 +53,9 @@ export default {
         data: {
           labels: [],
           datasets: [{
-            data: [1,0],
+            data: [1],
             backgroundColor: '#ccc',
             borderColor: '#555',
-            // borderWidth: 1
           }]
         },
 
@@ -72,7 +71,7 @@ export default {
       })
 
     theDataset = theChart.data.datasets[0]
-    window.theChart = theDataset
+    window.theChart = theChart
   },
 
   methods : {
@@ -81,21 +80,16 @@ export default {
       theChart.options.animation.duration = 1001
       theDataset.backgroundColor = this.pieBackgrounds
       theDataset.borderColor = this.pieBorders
+      theChart.update() // subsequent update when data changes does not update label colors *shrug*
     }
   },
 
   watch : {
     pieData() {
       !this.isAwake && this.wakeUp()
-      theChart.data.datasets[0].data = this.pieData
+      theDataset.data = this.pieData
       theChart.update()
     },
-    pieTitle() {
-      !this.isAwake && this.wakeUp()
-      theChart.options.title.display = true;
-      theChart.options.title.text = 'Based on stuff';
-      theChart.update()
-    }
   },
 
 }

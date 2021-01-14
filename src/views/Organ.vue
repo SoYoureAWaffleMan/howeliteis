@@ -3,7 +3,7 @@
     <button class="playpause" @click="playPause">{{ playPauseSymbol }}</button>
     <h2>Today's Articles ({{graunArticles.length}})</h2>
     <div>
-      {{statsOverall}}
+      <!-- {{statsOverall}} -->
     </div>
     <div class="total">
       <div class="pie-tin">
@@ -28,11 +28,13 @@
     <div>Pleb {{statsOverall.plebTally}}</div>
     <div>Pass {{statsOverall.unknownTally}}</div> -->
 
-    <p v-for="(article, index) in graunArticles" :key="index">
-      {{article.sectionName}} - {{ article.tags.length ? article.tags[0].webTitle : 'No tags'}}
-      <a :href=article.webUrl>{{article.webTitle.substring(0,25)}}</a>&nbsp;
-      <span v-if="article.author" class="author" :class="getAuthorClass(article.author)">{{article.author.name}}</span>
-    </p>
+    <div class="article-list">
+      <p v-for="(article, index) in graunArticles" :key="index">
+        {{article.sectionName}}
+        <a :href=article.webUrl>{{article.webTitle.substring(0,25)}}</a>&nbsp;
+        <span v-if="article.author" class="author" :class="getAuthorClass(article.author)">{{article.author.name}}</span>
+      </p>
+    </div>
 
     <!-- <h2>Personnel ({{graunPersonnel.length}})</h2>
     <p v-for="(person, index) in graunPersonnel" :key="index">
@@ -96,15 +98,23 @@ export default {
       }
     },
     getAuthorClass(author){
-      if(author['non-brit']) {
-        return 'international'
+      if(!author) {
+        return 'unknown'
       }
 
       if(author['oxbridge']) {
         return 'oxbridge'
       }
 
-      return 'other'
+      if(author['non-brit']) {
+        return 'international'
+      }
+
+      if(author['uni-text']) {
+        return 'other-uk'
+      }
+
+      return 'undisclosed'
     }
   }
 }
@@ -143,20 +153,35 @@ button.playpause {
   }
 }
 
+
+.article-list{
+  display: flex;
+  flex-direction: column;
+  // align-items: center;
+
+  p {
+    // flex : 0 1;
+    // text-align: left;
+    // max-width: 300px
+  }
+}
+
 .author {
   &.international {
-    background: purple;
+    background: lemonchiffon;
   }
 
   &.oxbridge {
     background: pink;
   }
 
-  &.other {
+  &.other-uk {
     background: powderblue;
   }
 
-
+  &.undisclosed {
+    outline : 2px dashed orange
+  }
 }
 
 </style>
