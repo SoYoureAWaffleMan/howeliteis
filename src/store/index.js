@@ -1,7 +1,7 @@
 import { createStore, createLogger } from 'vuex'
-import staticGraunPersonnel from '../../data/the-guardian-personnel.json'
+import config from '../config.js'
+import { getSheetAsArray } from '../lib/sheets.js'
 import ky from 'ky';
-import staticArticles from '../../data/articles.test.json'
 
 const apiKey = '9db526cb-6cfe-45a3-b45f-c89483d43628'
 const apiInterval = 1000
@@ -27,7 +27,7 @@ const getNextPageOfArticles = async (context) => {
   const pageOfArticles = parsed.response.results
 
   // Add author info to the article data and wang it in the state
-  addAuthorToArticles(pageOfArticles)
+  addAuthorToArticles(context, pageOfArticles)
   context.commit('appendArticles', pageOfArticles)
 
   // Update `maxPage` according to the response, and `gotPages`
@@ -49,11 +49,11 @@ const getNextPageOfArticles = async (context) => {
   }
 }
 
-const addAuthorToArticles = articles => {
-  articles.forEach(article => article.author = getAuthorByArticle(article))
+const addAuthorToArticles = (context, articles) => {
+  articles.forEach(article => article.author = getAuthorByArticle(context, article))
 }
 
-const getAuthorByArticle = article => {
+const getAuthorByArticle = (context, article) => {
   const verbose = false
   if(Array.isArray(article.tags) === false) {
     verbose && console.info('no tags')
@@ -72,7 +72,7 @@ const getAuthorByArticle = article => {
     return null
   }
 
-  const author = staticGraunPersonnel.find(person => person.name === contributorTag.webTitle)
+  const author = context.getters['staff'].find(person => person.name === contributorTag.webTitle)
 
   if(!author) {
     verbose && console.info(contributorTag.webTitle,'no matching author')
@@ -119,11 +119,15 @@ export default createStore({
       namespaced : true,
       state: {
         articles: {}, // object keyed by date e.g. {'2020-02-14' : [...articles]}
-        personnel: staticGraunPersonnel,
+        staff: null,
         proceed: false,
         complete: false,
+        isLoading: false,
+        loadingPercent: null,
       },
       getters: {
+        staff: state => state.staff,
+
         theDaysArticles(state){
           return state.articles[dateString] || []
         },
@@ -131,11 +135,11 @@ export default createStore({
          * Gets "stats" object comprised of `data` (array) & `labels` (array)
          * @param {Vuex state} state
          */
-        statsOverall(state, getters){
+        statsOverall(_state, getters){
           return getStatsForArticles(getters['theDaysArticles'])
         },
 
-        statsByPillar: (state) => {
+        statsByPillar: state => {
           // Simple object to group articles
           const pillarsObj = {}
 
@@ -170,6 +174,11 @@ export default createStore({
         },
       },
       actions: {
+        loadStaff(context) {
+          getSheetAsArray(config.graunStaffSheetId)
+            .then(staffData => context.commit('staff', staffData))
+
+        },
         async proceed(context) {
           // Any cached articles for this date?
           const cachedArticlesString = localStorage.getItem(dateString)
@@ -221,6 +230,9 @@ export default createStore({
         },
         appendArticles (state, articles) {
           state.articles[dateString].push(...articles)
+        },
+        staff(state, newStaff) {
+          state.staff = newStaff
         },
         proceed(state, newProceed) {
           state.proceed = newProceed

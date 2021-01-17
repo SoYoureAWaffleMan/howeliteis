@@ -52,8 +52,7 @@ export default {
     Pie
   },
   mounted(){
-
-    // this.$store.dispatch('graun/loadArticles')
+    this.$store.dispatch('graun/loadStaff')
   },
 
   computed : {

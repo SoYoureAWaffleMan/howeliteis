@@ -1,7 +1,4 @@
 <template>
-
-
-
   <h1>How Elite Is: The Guardian</h1>
   <!-- todo: use Portal for the publisher name -->
     <router-view/>
@@ -9,9 +6,7 @@
 
 <script>
 export default {
-  mounted() {
 
-  }
 }
 </script>
 
