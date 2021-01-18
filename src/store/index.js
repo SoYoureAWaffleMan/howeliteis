@@ -54,7 +54,7 @@ const addAuthorToArticles = (context, articles) => {
 }
 
 const getAuthorByArticle = (context, article) => {
-  const verbose = false
+  const verbose = true
   if(Array.isArray(article.tags) === false) {
     verbose && console.info('no tags')
     return null
@@ -187,11 +187,19 @@ export default createStore({
 
             try {
               const cachedArticles = JSON.parse(cachedArticlesString)
-              Array.isArray(cachedArticles) && context.commit('setArticles', cachedArticles)
-              console.log('Found in cache, bailing...');
+
+              if(Array.isArray(cachedArticles) === false) {
+                throw new error('Cache fail', cachedArticles)
+              }
+
+              console.info('Found articles in cache, refreshing authors...');
+              addAuthorToArticles(context, cachedArticles)
+              context.commit('setArticles', cachedArticles)
+
+              console.info('And bailing...');
               return
             } catch(error) {
-              console.error('Bad JSON', error)
+              console.error('Cache fail', error)
             }
           }
 

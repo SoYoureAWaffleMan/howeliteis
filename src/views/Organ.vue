@@ -33,6 +33,7 @@
         {{article.sectionName}}
         <a :href=article.webUrl>{{article.webTitle.substring(0,25)}}</a>&nbsp;
         <span v-if="article.author" class="author" :class="getAuthorClass(article.author)">{{article.author.name}}</span>
+        <span v-else-if="getTagAuthor(article)" class="unknown-author">{{getTagAuthor(article)}}</span>
       </p>
     </div>
 
@@ -114,6 +115,14 @@ export default {
       }
 
       return 'undisclosed'
+    },
+
+    getTagAuthor(article) {
+      try{
+        return article.tags[0].webTitle
+      } catch(e) {
+        console.log('No tag found')
+      }
     }
   }
 }
@@ -163,6 +172,10 @@ button.playpause {
     // text-align: left;
     // max-width: 300px
   }
+
+  .unknown-author {
+    background: #eee;
+  }
 }
 
 .author {
@@ -179,7 +192,7 @@ button.playpause {
   }
 
   &.undisclosed {
-    outline : 2px dashed orange
+    background: honeydew
   }
 }
 

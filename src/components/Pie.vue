@@ -30,17 +30,20 @@ export default {
   data() {
     return {
       isAwake : false,
+      // Oxbridge, Other, International, Undisclosed, Unknown
       pieBackgrounds : [
         'rgba(54, 162, 235, 0.2)',
         'rgba(255, 99, 132, 0.2)',
         'rgba(150, 20, 200, 0.2)',
         'rgba(180, 250, 180, 0.2)',
+        'rgba(200, 200, 200, 0.2)',
       ],
       pieBorders : [
         'rgba(54, 162, 235, 1)',
         'rgba(255, 99, 132, 1)',
         'rgba(150, 20, 200, 1)',
         'rgba(180, 250, 180, 1)',
+        'rgba(200, 200, 200, 1)',
       ]
     }
   },
